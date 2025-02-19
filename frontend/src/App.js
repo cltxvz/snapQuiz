@@ -32,62 +32,65 @@ function App() {
     setShowImage(false);
     setQuizStarted(false);
     setStartingGame(false);
+    setShowResults(false);
     setLoadingStatus("Finding image online...");
   
-    try {
-      // Fetch Image
-      const imageRes = await axios.get(`${API_URL}/get_image`);
-      setImageData(imageRes.data); // ✅ Ensure image data is stored
+    let validQuiz = false;
+    let quizRes, formattedQuiz;
   
-      // Fetch Quiz
-      setLoadingStatus("Generating quiz with AI... (might take a few seconds)");
-      const quizRes = await axios.post(`${API_URL}/get_quiz`, {
-        image_url: imageRes.data.image_url,
-      });
+    while (!validQuiz) {
+      try {
+        // Fetch Image and Quiz in One API Call
+        quizRes = await axios.post(`${API_URL}/get_quiz`);
   
-      console.log("Raw AI Quiz Response:", quizRes.data.quiz);
+        console.log("Received Quiz Response:", quizRes.data);
+        
+        if (!quizRes.data.image_url || !quizRes.data.quiz) {
+          throw new Error("Invalid response from API");
+        }
   
-      // Convert AI response to structured multiple-choice format
-      const formattedQuiz = parseQuiz(quizRes.data.quiz);
+        // Convert AI response to structured multiple-choice format
+        formattedQuiz = parseQuiz(quizRes.data.quiz);
   
-      if (formattedQuiz.length === 0) {
-        console.error("Quiz parsing failed: No valid questions were generated.");
-        alert("Quiz generation failed. Please try again.");
-        setGameStarted(false);
-        return;
+        if (formattedQuiz.length > 0) {
+          validQuiz = true;  // Valid quiz found
+        } else {
+          console.warn("Invalid quiz received. Retrying...");
+          setLoadingStatus("Finding a new image...");
+        }
+  
+      } catch (error) {
+        console.error("Error starting game:", error);
+        alert("An error occurred. Retrying...");
+        setLoadingStatus("Retrying...");
       }
-  
-      setQuiz(formattedQuiz);
-      setLoadingStatus("");
-  
-      // Show "Starting game..." for 3 seconds
-      setStartingGame(true);
-      setTimeout(() => {
-        setStartingGame(false);
-        setShowImage(true);
-  
-        // Start countdown timer
-        let countdown = 15;
-        setTimeLeft(countdown);
-        const timer = setInterval(() => {
-          countdown -= 1;
-          setTimeLeft(countdown);
-  
-          if (countdown === 0) {
-            clearInterval(timer);
-            setShowImage(false);
-            setQuizStarted(true);
-          }
-        }, 1000);
-      }, 3000); // 3-second delay before showing the image
-  
-    } catch (error) {
-      console.error("Error starting game:", error);
-      alert("An error occurred. Please try again.");
-      setGameStarted(false);
     }
-  };
   
+    // Set the correct image and quiz
+    setImageData({ image_url: quizRes.data.image_url });
+    setQuiz(formattedQuiz);
+    setLoadingStatus("");
+  
+    // Show "Starting game..." for 3 seconds
+    setStartingGame(true);
+    setTimeout(() => {
+      setStartingGame(false);
+      setShowImage(true);
+  
+      let countdown = 15;
+      setTimeLeft(countdown);
+      const timer = setInterval(() => {
+        countdown -= 1;
+        setTimeLeft(countdown);
+  
+        if (countdown === 0) {
+          clearInterval(timer);
+          setShowImage(false);
+          setQuizStarted(true);
+        }
+      }, 1000);
+    }, 3000);
+  };
 
   // Convert AI-generated text into structured multiple-choice quiz format
   const parseQuiz = (quizText) => {
@@ -95,54 +98,52 @@ function App() {
       console.error("Invalid quiz data received:", quizText);
       return [];
     }
-  
+
     if (quizText.startsWith("ERROR")) {
       console.error("AI Error:", quizText);
       return [];
     }
-  
+
     const questions = quizText.split("\n").filter(q => q.trim() !== "");
-  
+
     return questions
       .map((q, index) => {
         const parts = q.split(" - ").map(part => part.trim());
-  
+
         if (parts.length !== 5) {
           console.warn(`Skipping invalid question format: ${q}`);
           return null;
         }
-  
-        const correctAnswer = parts[1]; // The AI always places the correct answer first
+
+        const correctAnswer = parts[1]; // AI always places correct answer first
         const choices = [parts[1], parts[2], parts[3], parts[4]];
-  
-        // Shuffle choices once before storing in state
+
+        // Shuffle choices before storing them
         const shuffledChoices = choices
-          .map(choice => ({ choice, sort: Math.random() })) // Attach random sort key
-          .sort((a, b) => a.sort - b.sort) // Sort randomly
-          .map(({ choice }) => choice); // Extract shuffled choices
-  
+          .map(choice => ({ choice, sort: Math.random() }))
+          .sort((a, b) => a.sort - b.sort)
+          .map(({ choice }) => choice);
+
         return {
           id: index,
           question: parts[0],
-          choices: shuffledChoices, // Store shuffled choices
-          correctAnswer: correctAnswer, // Keep track of the correct answer
+          choices: shuffledChoices,
+          correctAnswer: correctAnswer, // Track correct answer before shuffle
         };
       })
       .filter(q => q !== null);
   };
-  
-  
 
   // Move to the next question or show results
   const nextQuestion = () => {
     if (currentQuestion < quiz.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     } else {
-      calculateScore();
-      setShowResults(true);
+      console.log("Submitting quiz... Triggering score calculation.");
+      calculateScore();  // Ensure score is calculated
     }
   };
-
+  
   // Move to the previous question
   const prevQuestion = () => {
     if (currentQuestion > 0) {
@@ -152,19 +153,32 @@ function App() {
 
   // Calculate Score
   const calculateScore = () => {
+    console.log("Calculating score...");
+  
+    if (!quiz || quiz.length === 0) {
+      console.error("ERROR: Quiz data is empty when calculating score!");
+      return; // Prevent score calculation if the quiz is empty
+    }
+  
     let correctCount = 0;
     quiz.forEach((q) => {
       if (playerAnswers[q.id] === q.correctAnswer) {
         correctCount++;
       }
     });
+  
+    console.log(`Final Score: ${correctCount} / ${quiz.length}`);
+    
     setScore(correctCount);
+    setShowResults(true); // Ensure results page is triggered
+  
+    console.log("Results should now be displayed.");
   };
-
+  
   return (
     <div className="d-flex flex-column min-vh-100 bg-gray-900 text-white">
       <Header />
-  
+
       <main className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
         {!gameStarted ? (
           <WelcomePage onStart={startGame} />
@@ -194,7 +208,7 @@ function App() {
                   />
                 </div>
                 <p className="text-xl font-semibold" style={{ color: "black" }}>Memorize this image!</p>
-  
+
                 {/* Timer Display */}
                 <div className="w-64 bg-gray-700 rounded-full h-4 mt-2 relative">
                   <div
@@ -221,7 +235,7 @@ function App() {
                   >
                     {quiz[currentQuestion]?.question || "Loading..."}
                   </h2>
-  
+
                   {/* Answer Choices */}
                   <div>
                     {quiz[currentQuestion]?.choices?.map((choice, index) => (
@@ -232,8 +246,8 @@ function App() {
                           setPlayerAnswers({ ...playerAnswers, [quiz[currentQuestion]?.id]: choice })
                         }
                         style={{
-                          backgroundColor: playerAnswers[quiz[currentQuestion]?.id] === choice ? "#d6d6d6" : "#f5f5f5",
-                          color: playerAnswers[quiz[currentQuestion]?.id] === choice ? "#333" : "#333",
+                          backgroundColor: playerAnswers[quiz[currentQuestion]?.id] === choice ? "#4169E1" : "#f5f5f5",
+                          color: playerAnswers[quiz[currentQuestion]?.id] === choice ? "#ffffff" : "#333",
                           fontWeight: "bold",
                           fontSize: "1rem",
                           textAlign: "left",
@@ -244,13 +258,13 @@ function App() {
                           width: "100%"
                         }}
                         onMouseOver={(e) => e.target.style.backgroundColor = "#d6d6d6"}
-                        onMouseOut={(e) => e.target.style.backgroundColor = playerAnswers[quiz[currentQuestion]?.id] === choice ? "#d6d6d6" : "#f5f5f5"}
+                        onMouseOut={(e) => e.target.style.backgroundColor = playerAnswers[quiz[currentQuestion]?.id] === choice ? "#4169E1" : "#f5f5f5"}
                       >
                         {choice}
                       </button>
                     ))}
                   </div>
-  
+
                   {/* Navigation Buttons */}
                   <div className="mt-4 flex justify-between">
                     {currentQuestion > 0 && (
@@ -297,18 +311,48 @@ function App() {
               </>
             ) : showResults && quiz.length > 0 ? (
               <>
-                <h2 className="text-xl font-bold mb-4" style={{ color: "black" }}>Results</h2>
-  
+                {/* Space between header and results */}
+                <div style={{ marginTop: "40px" }}>
+                  <h2 className="text-xl font-bold mb-4" style={{ color: "black", fontSize: "2rem" }}>
+                    Results:
+                  </h2>
+                </div>
+
+                {/* Resized Image */}
                 {imageData && imageData.image_url && (
-                  <div className="mb-4">
-                    <img src={imageData.image_url} alt="Quiz" className="rounded shadow-lg w-96 h-auto" />
+                  <div className="mb-4 text-center">
+                    <img 
+                      src={imageData.image_url} 
+                      alt="Quiz" 
+                      className="rounded shadow-lg"
+                      style={{
+                        width: "80%",
+                        maxWidth: "1000px",
+                        minWidth: "1000px",
+                        height: "auto",
+                        maxHeight: "800px",
+                        minHeight: "800px",
+                        objectFit: "contain",
+                        border: "5px solid #333",
+                      }} 
+                    />
                   </div>
                 )}
-  
-                <p className="text-lg font-bold" style={{ color: "black" }}>
+
+                {/* Enlarged Score */}
+                <p 
+                  className="text-lg font-bold"
+                  style={{
+                    color: "black",
+                    fontSize: "2.5rem",
+                    fontWeight: "bold",
+                    marginBottom: "20px"
+                  }}
+                >
                   Final Score: {score} / {quiz.length}
                 </p>
-  
+
+                {/* Display all questions with correct and selected answers */}
                 <div className="mt-4 p-4 bg-gray-800 rounded shadow-lg w-96">
                   {quiz.map((q) => (
                     <div key={q.id} className="mb-4">
@@ -318,21 +362,19 @@ function App() {
                       <p className="text-green-400 font-bold" style={{ color: "black" }}>
                         Correct Answer: {q.correctAnswer}
                       </p>
-                      <p
-                        className={`font-bold ${
-                          playerAnswers[q.id] === q.correctAnswer ? "text-green-400" : "text-red-400"
-                        }`}
-                        style={{ color: "black" }}
-                      >
+                      <p className={`font-bold ${playerAnswers[q.id] === q.correctAnswer ? "text-green-400" : "text-red-400"}`} style={{ color: "black" }}>
                         Your Answer: {playerAnswers[q.id] || "No answer selected"}
                       </p>
                     </div>
                   ))}
                 </div>
-  
-                <button className="bg-red-500 text-white px-4 py-2 rounded mt-4" onClick={() => window.location.reload()}>
-                  Play Again
-                </button>
+
+                {/* Play Again Button */}
+                <div style={{ marginTop: "30px", marginBottom: "40px" }}>
+                  <button className="bg-danger text-white px-6 py-3 rounded shadow-lg" onClick={() => window.location.reload()}>
+                    Play Again
+                  </button>
+                </div>
               </>
             ) : (
               <p className="text-xl font-semibold" style={{ color: "black" }}>Loading results...</p>
@@ -340,11 +382,12 @@ function App() {
           </>
         )}
       </main>
-  
+
       <Footer />
     </div>
   );
-        
+
+
 }
 
 export default App;

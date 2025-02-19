@@ -25,7 +25,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Allows frontend requests
 
 def fetch_random_image():
     """Scrapes a random full-resolution image from Wikimedia Commons."""
-    
+
     topics = ["nature", "landscape", "animals", "architecture", "food", "art", "history"]
     search_topic = random.choice(topics)
 
@@ -79,6 +79,7 @@ def download_image(image_url):
         response = requests.get(image_url, headers=headers, stream=True)
 
         if response.status_code == 200:
+            print(f"Downloading Image from: {image_url}")  # Debugging log
             img = Image.open(BytesIO(response.content))
 
             # Convert to RGB mode to avoid issues with non-standard formats
@@ -92,6 +93,7 @@ def download_image(image_url):
             image_path = "temp_image.jpg"
             img.save(image_path, "JPEG")
 
+            print("Image Successfully Processed and Saved")
             return image_path
         else:
             print("Failed to download image.")
@@ -101,9 +103,10 @@ def download_image(image_url):
         return None
 
 
+
 def generate_quiz(image_url):
     """Generates structured multiple-choice quiz questions using Google Gemini Vision."""
-    
+
     image_path = download_image(image_url)
     if not image_path:
         return "ERROR: Could not download image for analysis."
@@ -118,6 +121,8 @@ def generate_quiz(image_url):
         - Each question must be **a full sentence** that clearly describes an object, color, shape, or element in the image.
         - Each question must have **exactly 4 answer choices**.
         - The **correct answer must always be the first choice**.
+        - Make good, meaningful questions and not just generic ones. Actually analyze the image and make questions.
+        - Never ask what the dominant color of the image is.
         - STRICT FORMAT (no extra text before or after):
           "What is the dominant color in the image? - Blue - Red - Green - Yellow"
           "What object is located in the upper right corner? - A bird - A lamp - A tree - A cloud"
@@ -141,9 +146,6 @@ def generate_quiz(image_url):
         print(f"Error in AI quiz generation: {e}")
         return "ERROR: AI failed to generate quiz."
 
-
-
-
 @app.route('/get_quiz', methods=['POST'])
 def get_quiz():
     """Fetch a valid image and generate a quiz based on it."""
@@ -152,7 +154,7 @@ def get_quiz():
 
     while attempts < max_retries:
         attempts += 1
-        print(f"🔄 Attempt {attempts}: Fetching new image...")
+        print(f"Attempt {attempts}: Fetching new image...")
 
         # Step 1: Fetch an Image
         image_data = fetch_random_image()
@@ -161,23 +163,25 @@ def get_quiz():
             continue  # Fetch another image
 
         image_url = image_data["image_url"]
-        print(f"✅ Image Found: {image_url}")
+        print(f"Image Found: {image_url}")
 
         # Step 2: Try to Generate Quiz
-        print("🧠 Generating quiz with AI...")
+        print("Generating quiz with AI for this image...")
         quiz = generate_quiz(image_url)
 
         if quiz.startswith("ERROR") or "Could not generate quiz" in quiz:
-            print("❌ AI failed to process the image. Retrying...")
+            print("AI failed to process the image. Retrying...")
             continue  # Fetch another image
 
-        # If we get a valid quiz, return the response
-        return jsonify({"image_url": image_url, "quiz": quiz})
+        # Return both the image URL and the generated quiz
+        return jsonify({
+            "image_url": image_url,  # Ensure the correct image is sent
+            "quiz": quiz
+        })
 
     # If all attempts fail, return an error message
-    print("🚨 Max retries reached. No valid images found.")
+    print("Max retries reached. No valid images found.")
     return jsonify({"error": "Could not find a valid image after multiple attempts. Please refresh the page and try again."}), 500
-
 
 @app.route('/get_image')
 def get_image():
@@ -189,3 +193,4 @@ def get_image():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    
