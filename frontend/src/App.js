@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import WelcomePage from "./components/WelcomePage";
 
 const API_URL = "http://127.0.0.1:5000"; // Flask backend
 
@@ -159,111 +162,136 @@ function App() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-      <h1 className="text-3xl font-bold mb-4">SnapQuiz</h1>
+    <div className="d-flex flex-column min-vh-100 bg-gray-900 text-white">
+      <Header />
   
-      {!gameStarted ? (
-        <button
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          onClick={startGame}
-        >
-          Start Game
-        </button>
-      ) : loadingStatus ? (
-        <p className="text-xl font-semibold">{loadingStatus}</p>
-      ) : startingGame ? (
-        <p className="text-xl font-semibold">Starting game...</p>
-      ) : showImage ? (
-        <>
-          <div className="mb-4">
-            <img src={imageData?.image_url} alt="Quiz" className="rounded shadow-lg w-96 h-auto" />
-          </div>
-          <p className="text-xl font-semibold">Memorize this image!</p>
+      <main className="flex-grow-1 d-flex flex-column align-items-center justify-content-center">
+        {!gameStarted ? (
+          <WelcomePage onStart={startGame} />
+        ) : (
+          <>
+            {loadingStatus ? (
+              <p className="text-xl font-semibold" style={{ color: "black" }}>{loadingStatus}</p>
+            ) : startingGame ? (
+              <p className="text-xl font-semibold" style={{ color: "black" }}>Starting game...</p>
+            ) : showImage ? (
+              <>
+                <div className="mb-4 text-center" style={{ marginTop: "30px" }}>
+                  <img 
+                    src={imageData?.image_url} 
+                    alt="Quiz" 
+                    className="rounded shadow-lg" 
+                    style={{
+                      width: "80%",  // Responsive width
+                      maxWidth: "1000px", // Standard max width
+                      height: "auto", // Keep aspect ratio
+                      maxHeight: "800px", // Limit height
+                      objectFit: "contain", // Prevents cropping
+                      border: "5px solid #333", // Adds a subtle border
+                    }} 
+                  />
+                </div>
+                <p className="text-xl font-semibold" style={{ color: "black" }}>Memorize this image!</p>
+            
+                {/* Timer Display */}
+                <div className="w-64 bg-gray-700 rounded-full h-4 mt-2 relative">
+                  <div
+                    className="bg-green-500 h-4 rounded-full absolute"
+                    style={{ width: `${(timeLeft / 15) * 100}%`, transition: "width 1s linear" }}
+                  ></div>
+                </div>
+                <p className="text-lg font-semibold mt-2" style={{ color: "black" }}>{timeLeft} seconds left</p>
+              </>
+            ) 
+             : !showResults && quizStarted && quiz.length > 0 ? (
+              <>
+                <div className="mt-4 p-4 bg-gray-800 rounded shadow-lg w-96">
+                  <h2 className="text-lg font-semibold" style={{ color: "black" }}>{quiz[currentQuestion]?.question || "Loading..."}</h2>
+                  {quiz[currentQuestion]?.choices.map((choice, index) => (
+                    <label
+                      key={index}
+                      className={`block p-2 mt-2 rounded cursor-pointer hover:bg-gray-600 ${
+                        playerAnswers[quiz[currentQuestion]?.id] === choice ? "bg-blue-700" : "bg-gray-700"
+                      }`}
+                      style={{ color: "black" }}
+                    >
+                      <input
+                        type="radio"
+                        name={`question-${quiz[currentQuestion]?.id}`}
+                        value={choice}
+                        checked={playerAnswers[quiz[currentQuestion]?.id] === choice}
+                        onChange={() =>
+                          setPlayerAnswers({ ...playerAnswers, [quiz[currentQuestion]?.id]: choice })
+                        }
+                        className="mr-2 hidden"
+                      />
+                      {choice}
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  {currentQuestion > 0 && (
+                    <button className="bg-gray-500 text-white px-4 py-2 rounded mr-2" onClick={prevQuestion}>
+                      Previous
+                    </button>
+                  )}
+                  <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={nextQuestion}>
+                    {currentQuestion === quiz.length - 1 ? "Submit Quiz" : "Next"}
+                  </button>
+                </div>
+              </>
+            ) : showResults && quiz.length > 0 ? (
+              <>
+                <h2 className="text-xl font-bold mb-4" style={{ color: "black" }}>Results</h2>
   
-          {/* Timer Display */}
-          <div className="w-64 bg-gray-700 rounded-full h-4 mt-2 relative">
-            <div
-              className="bg-green-500 h-4 rounded-full absolute"
-              style={{ width: `${(timeLeft / 15) * 100}%`, transition: "width 1s linear" }}
-            ></div>
-          </div>
-          <p className="text-lg font-semibold mt-2">{timeLeft} seconds left</p>
-        </>
-      ) : !showResults && quizStarted && quiz.length > 0 ? (
-        <>
-          <div className="mt-4 p-4 bg-gray-800 rounded shadow-lg w-96">
-            <h2 className="text-lg font-semibold">{quiz[currentQuestion]?.question || "Loading..."}</h2>
-            {quiz[currentQuestion]?.choices.map((choice, index) => (
-              <label
-                key={index}
-                className={`block p-2 mt-2 rounded cursor-pointer hover:bg-gray-600 ${
-                  playerAnswers[quiz[currentQuestion]?.id] === choice ? "bg-blue-700" : "bg-gray-700"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name={`question-${quiz[currentQuestion]?.id}`}
-                  value={choice}
-                  checked={playerAnswers[quiz[currentQuestion]?.id] === choice}
-                  onChange={() =>
-                    setPlayerAnswers({ ...playerAnswers, [quiz[currentQuestion]?.id]: choice })
-                  }
-                  className="mr-2 hidden"
-                />
-                {choice}
-              </label>
-            ))}
-          </div>
-          <div className="mt-4">
-            {currentQuestion > 0 && (
-              <button className="bg-gray-500 text-white px-4 py-2 rounded mr-2" onClick={prevQuestion}>
-                Previous
-              </button>
-            )}
-            <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={nextQuestion}>
-              {currentQuestion === quiz.length - 1 ? "Submit Quiz" : "Next"}
-            </button>
-          </div>
-        </>
-      ) : showResults && quiz.length > 0 ? (
-        <>
-          <h2 className="text-xl font-bold mb-4">Results</h2>
+                {/* Ensure image is displayed in results */}
+                {imageData && imageData.image_url && (
+                  <div className="mb-4">
+                    <img src={imageData.image_url} alt="Quiz" className="rounded shadow-lg w-96 h-auto" />
+                  </div>
+                )}
   
-          {/* Ensure image is displayed in results */}
-          {imageData && imageData.image_url && (
-            <div className="mb-4">
-              <img src={imageData.image_url} alt="Quiz" className="rounded shadow-lg w-96 h-auto" />
-            </div>
-          )}
-  
-          <p className="text-lg font-bold">Final Score: {score} / {quiz.length}</p>
-  
-          {/* Display all questions with correct and selected answers */}
-          <div className="mt-4 p-4 bg-gray-800 rounded shadow-lg w-96">
-            {quiz.map((q) => (
-              <div key={q.id} className="mb-4">
-                <h2 className="text-lg font-semibold">{q.question || "Question not available"}</h2>
-                <p className="text-green-400 font-bold">Correct Answer: {q.correctAnswer}</p>
-                <p
-                  className={`font-bold ${
-                    playerAnswers[q.id] === q.correctAnswer ? "text-green-400" : "text-red-400"
-                  }`}
-                >
-                  Your Answer: {playerAnswers[q.id] || "No answer selected"}
+                <p className="text-lg font-bold" style={{ color: "black" }}>
+                  Final Score: {score} / {quiz.length}
                 </p>
-              </div>
-            ))}
-          </div>
   
-          <button className="bg-red-500 text-white px-4 py-2 rounded mt-4" onClick={() => window.location.reload()}>
-            Play Again
-          </button>
-        </>
-      ) : (
-        <p className="text-xl font-semibold">Loading results...</p>
-      )}
+                {/* Display all questions with correct and selected answers */}
+                <div className="mt-4 p-4 bg-gray-800 rounded shadow-lg w-96">
+                  {quiz.map((q) => (
+                    <div key={q.id} className="mb-4">
+                      <h2 className="text-lg font-semibold" style={{ color: "black" }}>
+                        {q.question || "Question not available"}
+                      </h2>
+                      <p className="text-green-400 font-bold" style={{ color: "black" }}>
+                        Correct Answer: {q.correctAnswer}
+                      </p>
+                      <p
+                        className={`font-bold ${
+                          playerAnswers[q.id] === q.correctAnswer ? "text-green-400" : "text-red-400"
+                        }`}
+                        style={{ color: "black" }}
+                      >
+                        Your Answer: {playerAnswers[q.id] || "No answer selected"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+  
+                <button className="bg-red-500 text-white px-4 py-2 rounded mt-4" onClick={() => window.location.reload()}>
+                  Play Again
+                </button>
+              </>
+            ) : (
+              <p className="text-xl font-semibold" style={{ color: "black" }}>Loading results...</p>
+            )}
+          </>
+        )}
+      </main>
+  
+      <Footer />
     </div>
   );
+  
     
 }
 
