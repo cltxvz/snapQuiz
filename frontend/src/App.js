@@ -92,32 +92,43 @@ function App() {
       console.error("Invalid quiz data received:", quizText);
       return [];
     }
-
+  
     if (quizText.startsWith("ERROR")) {
       console.error("AI Error:", quizText);
       return [];
     }
-
+  
     const questions = quizText.split("\n").filter(q => q.trim() !== "");
-
+  
     return questions
       .map((q, index) => {
         const parts = q.split(" - ").map(part => part.trim());
-
+  
         if (parts.length !== 5) {
           console.warn(`Skipping invalid question format: ${q}`);
           return null;
         }
-
+  
+        const correctAnswer = parts[1]; // The AI always places the correct answer first
+        const choices = [parts[1], parts[2], parts[3], parts[4]];
+  
+        // Shuffle choices once before storing in state
+        const shuffledChoices = choices
+          .map(choice => ({ choice, sort: Math.random() })) // Attach random sort key
+          .sort((a, b) => a.sort - b.sort) // Sort randomly
+          .map(({ choice }) => choice); // Extract shuffled choices
+  
         return {
           id: index,
           question: parts[0],
-          choices: [parts[1], parts[2], parts[3], parts[4]],
-          correctAnswer: parts[1],
+          choices: shuffledChoices, // Store shuffled choices
+          correctAnswer: correctAnswer, // Keep track of the correct answer
         };
       })
       .filter(q => q !== null);
   };
+  
+  
 
   // Move to the next question or show results
   const nextQuestion = () => {
@@ -168,7 +179,7 @@ function App() {
             <img src={imageData?.image_url} alt="Quiz" className="rounded shadow-lg w-96 h-auto" />
           </div>
           <p className="text-xl font-semibold">Memorize this image!</p>
-          
+  
           {/* Timer Display */}
           <div className="w-64 bg-gray-700 rounded-full h-4 mt-2 relative">
             <div
@@ -194,7 +205,9 @@ function App() {
                   name={`question-${quiz[currentQuestion]?.id}`}
                   value={choice}
                   checked={playerAnswers[quiz[currentQuestion]?.id] === choice}
-                  onChange={() => setPlayerAnswers({ ...playerAnswers, [quiz[currentQuestion]?.id]: choice })}
+                  onChange={() =>
+                    setPlayerAnswers({ ...playerAnswers, [quiz[currentQuestion]?.id]: choice })
+                  }
                   className="mr-2 hidden"
                 />
                 {choice}
@@ -251,7 +264,7 @@ function App() {
       )}
     </div>
   );
-  
+    
 }
 
 export default App;
