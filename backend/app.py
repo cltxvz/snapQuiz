@@ -8,6 +8,8 @@ from flask_cors import CORS
 from PIL import Image
 from io import BytesIO
 from bs4 import BeautifulSoup
+import mimetypes
+import re
 
 # Load environment variables
 load_dotenv()
@@ -17,7 +19,8 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS
+# Allow all origins for development
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allows frontend requests
 
 def fetch_random_image():
     """Scrapes a random full-resolution image from Wikimedia Commons."""
@@ -67,71 +70,76 @@ def fetch_random_image():
     return None
 
 def download_image(image_url):
-    """Downloads the image and returns it as a Pillow Image object, handling potential Wikimedia restrictions."""
+    """Downloads the image and converts it to a compatible JPEG format."""
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
         response = requests.get(image_url, headers=headers, stream=True)
 
-        print(f"Downloading image: {image_url}")
-        print(f"Response status: {response.status_code}")
-
         if response.status_code == 200:
             img = Image.open(BytesIO(response.content))
-            return img
 
+            # Convert to RGB mode to avoid issues with non-standard formats
+            img = img.convert("RGB")
+
+            # Resize if necessary (prevents oversized images)
+            max_size = (1024, 1024)  # Limit image size
+            img.thumbnail(max_size)
+
+            # Save as JPEG for Gemini compatibility
+            image_path = "temp_image.jpg"
+            img.save(image_path, "JPEG")
+
+            return image_path
+        else:
+            print("Failed to download image.")
+            return None
     except Exception as e:
         print(f"Error downloading image: {e}")
-
-    return None
+        return None
 
 
 def generate_quiz(image_url):
     """Generates structured multiple-choice quiz questions using Google Gemini Vision."""
-
-    img = download_image(image_url)
-    if not img:
-        return "Could not download image for analysis."
-
-    prompt = f"""
-    Analyze this image carefully and generate a **challenging** multiple-choice quiz with 10 questions.
-
-    **IMPORTANT RULES:**
-    - Each question must be **a full sentence**.
-    - Each question must have **exactly 4 answer choices**.
-    - The **correct answer must always be the first choice**.
-    - Questions should test **detailed observation skills**, such as:
-      ✅ Specific colors, patterns, or objects in the image.
-      ✅ Relationships between objects in the scene.
-      ✅ Rarely noticed details like background elements.
-    - STRICT FORMAT (no extra text before or after):
-      "What is the dominant color in the image? - Blue - Red - Green - Yellow"
-      "What object is located in the upper right corner? - A bird - A lamp - A tree - A cloud"
-      "What pattern appears on the main subject's clothing? - Stripes - Dots - Plaid - Plain"
-    - Do **NOT** include:
-      ❌ Any introduction text  
-      ❌ "Here is a multiple-choice quiz..."  
-      ❌ Explanations before or after the questions  
-    """
+    
+    image_path = download_image(image_url)
+    if not image_path:
+        return "ERROR: Could not download image for analysis."
 
     try:
+        uploaded_file = genai.upload_file(image_path)
+
+        prompt = f"""
+        Analyze this image and generate a **challenging** multiple-choice quiz with 10 questions.
+
+        **IMPORTANT RULES:**
+        - Each question must be **a full sentence** that clearly describes an object, color, shape, or element in the image.
+        - Each question must have **exactly 4 answer choices**.
+        - The **correct answer must always be the first choice**.
+        - STRICT FORMAT (no extra text before or after):
+          "What is the dominant color in the image? - Blue - Red - Green - Yellow"
+          "What object is located in the upper right corner? - A bird - A lamp - A tree - A cloud"
+        - **Avoid** code, numbers, or abstract answers.
+        - **Make answers logical and visually understandable for a player.**
+        """
+
         model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content([prompt, img])
+        response = model.generate_content([prompt, uploaded_file])
+
+        os.remove(image_path)
 
         if response and response.text:
             quiz_text = response.text.strip()
-
-            # Remove any AI-generated intro or extra text
-            if "Here is a multiple-choice quiz" in quiz_text:
-                quiz_text = quiz_text.split("\n", 1)[-1].strip()  # Remove the first line
-
+            if "ERROR" in quiz_text or len(quiz_text) < 10:
+                print("AI returned an invalid quiz.")
+                return "ERROR: Quiz generation failed."
             return quiz_text
 
     except Exception as e:
         print(f"Error in AI quiz generation: {e}")
+        return "ERROR: AI failed to generate quiz."
 
-    return "Could not generate quiz."
 
 
 
@@ -150,7 +158,7 @@ def get_quiz():
 
 @app.route('/get_image')
 def get_image():
-    """API Endpoint to get a random image from Wikimedia Commons."""
+    """API Endpoint to get a valid image."""
     image_data = fetch_random_image()
     if image_data:
         return jsonify(image_data)
