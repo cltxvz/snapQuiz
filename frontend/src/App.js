@@ -182,17 +182,19 @@ function App() {
                     alt="Quiz" 
                     className="rounded shadow-lg" 
                     style={{
-                      width: "80%",  // Responsive width
-                      maxWidth: "1000px", // Standard max width
-                      height: "auto", // Keep aspect ratio
-                      maxHeight: "800px", // Limit height
-                      objectFit: "contain", // Prevents cropping
-                      border: "5px solid #333", // Adds a subtle border
+                      width: "80%",  
+                      maxWidth: "1000px", 
+                      minWidth: "1000px",
+                      height: "auto", 
+                      maxHeight: "800px",
+                      minHeight: "800px", 
+                      objectFit: "contain", 
+                      border: "5px solid #333", 
                     }} 
                   />
                 </div>
                 <p className="text-xl font-semibold" style={{ color: "black" }}>Memorize this image!</p>
-            
+  
                 {/* Timer Display */}
                 <div className="w-64 bg-gray-700 rounded-full h-4 mt-2 relative">
                   <div
@@ -202,49 +204,101 @@ function App() {
                 </div>
                 <p className="text-lg font-semibold mt-2" style={{ color: "black" }}>{timeLeft} seconds left</p>
               </>
-            ) 
-             : !showResults && quizStarted && quiz.length > 0 ? (
+            ) : !showResults && quizStarted && quiz.length > 0 ? (
               <>
-                <div className="mt-4 p-4 bg-gray-800 rounded shadow-lg w-96">
-                  <h2 className="text-lg font-semibold" style={{ color: "black" }}>{quiz[currentQuestion]?.question || "Loading..."}</h2>
-                  {quiz[currentQuestion]?.choices.map((choice, index) => (
-                    <label
-                      key={index}
-                      className={`block p-2 mt-2 rounded cursor-pointer hover:bg-gray-600 ${
-                        playerAnswers[quiz[currentQuestion]?.id] === choice ? "bg-blue-700" : "bg-gray-700"
-                      }`}
-                      style={{ color: "black" }}
-                    >
-                      <input
-                        type="radio"
-                        name={`question-${quiz[currentQuestion]?.id}`}
-                        value={choice}
-                        checked={playerAnswers[quiz[currentQuestion]?.id] === choice}
-                        onChange={() =>
+                <div 
+                  className="mt-4 p-4 bg-gray-100 rounded shadow-lg w-96 text-center"
+                  style={{
+                    backgroundColor: "#ffffff",
+                    padding: "20px",
+                    borderRadius: "12px",
+                    boxShadow: "0px 4px 10px rgba(0,0,0,0.2)"
+                  }}
+                >
+                  <h2 
+                    className="text-lg font-semibold mb-4"
+                    style={{ color: "#333", fontSize: "1.5rem", fontWeight: "bold", marginBottom: "15px" }}
+                  >
+                    {quiz[currentQuestion]?.question || "Loading..."}
+                  </h2>
+  
+                  {/* Answer Choices */}
+                  <div>
+                    {quiz[currentQuestion]?.choices?.map((choice, index) => (
+                      <button
+                        key={index}
+                        className="w-full p-3 my-2 rounded transition-all"
+                        onClick={() => 
                           setPlayerAnswers({ ...playerAnswers, [quiz[currentQuestion]?.id]: choice })
                         }
-                        className="mr-2 hidden"
-                      />
-                      {choice}
-                    </label>
-                  ))}
-                </div>
-                <div className="mt-4">
-                  {currentQuestion > 0 && (
-                    <button className="bg-gray-500 text-white px-4 py-2 rounded mr-2" onClick={prevQuestion}>
-                      Previous
+                        style={{
+                          backgroundColor: playerAnswers[quiz[currentQuestion]?.id] === choice ? "#d6d6d6" : "#f5f5f5",
+                          color: playerAnswers[quiz[currentQuestion]?.id] === choice ? "#333" : "#333",
+                          fontWeight: "bold",
+                          fontSize: "1rem",
+                          textAlign: "left",
+                          border: "none",
+                          cursor: "pointer",
+                          transition: "background-color 0.3s ease-in-out",
+                          display: "block",
+                          width: "100%"
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = "#d6d6d6"}
+                        onMouseOut={(e) => e.target.style.backgroundColor = playerAnswers[quiz[currentQuestion]?.id] === choice ? "#d6d6d6" : "#f5f5f5"}
+                      >
+                        {choice}
+                      </button>
+                    ))}
+                  </div>
+  
+                  {/* Navigation Buttons */}
+                  <div className="mt-4 flex justify-between">
+                    {currentQuestion > 0 && (
+                      <button 
+                        className="px-4 py-2 rounded bg-gray-500 text-white"
+                        onClick={prevQuestion}
+                        style={{
+                          backgroundColor: "#6c757d",
+                          fontSize: "1rem",
+                          fontWeight: "bold",
+                          cursor: "pointer",
+                          border: "none",
+                          padding: "10px 15px",
+                          borderRadius: "8px",
+                          transition: "background-color 0.3s ease-in-out",
+                          marginRight: "7px"
+                        }}
+                        onMouseOver={(e) => e.target.style.backgroundColor = "#5a6268"}
+                        onMouseOut={(e) => e.target.style.backgroundColor = "#6c757d"}
+                      >
+                        Previous
+                      </button>
+                    )}
+                    <button 
+                      className="px-4 py-2 rounded bg-green-500 text-white"
+                      onClick={nextQuestion}
+                      style={{
+                        backgroundColor: "#28a745",
+                        fontSize: "1rem",
+                        fontWeight: "bold",
+                        cursor: "pointer",
+                        border: "none",
+                        padding: "10px 15px",
+                        borderRadius: "8px",
+                        transition: "background-color 0.3s ease-in-out"
+                      }}
+                      onMouseOver={(e) => e.target.style.backgroundColor = "#218838"}
+                      onMouseOut={(e) => e.target.style.backgroundColor = "#28a745"}
+                    >
+                      {currentQuestion === quiz.length - 1 ? "Submit Quiz" : "Next"}
                     </button>
-                  )}
-                  <button className="bg-green-500 text-white px-4 py-2 rounded" onClick={nextQuestion}>
-                    {currentQuestion === quiz.length - 1 ? "Submit Quiz" : "Next"}
-                  </button>
+                  </div>
                 </div>
               </>
             ) : showResults && quiz.length > 0 ? (
               <>
                 <h2 className="text-xl font-bold mb-4" style={{ color: "black" }}>Results</h2>
   
-                {/* Ensure image is displayed in results */}
                 {imageData && imageData.image_url && (
                   <div className="mb-4">
                     <img src={imageData.image_url} alt="Quiz" className="rounded shadow-lg w-96 h-auto" />
@@ -255,7 +309,6 @@ function App() {
                   Final Score: {score} / {quiz.length}
                 </p>
   
-                {/* Display all questions with correct and selected answers */}
                 <div className="mt-4 p-4 bg-gray-800 rounded shadow-lg w-96">
                   {quiz.map((q) => (
                     <div key={q.id} className="mb-4">
@@ -291,8 +344,7 @@ function App() {
       <Footer />
     </div>
   );
-  
-    
+        
 }
 
 export default App;

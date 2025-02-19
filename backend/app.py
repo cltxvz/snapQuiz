@@ -10,6 +10,7 @@ from io import BytesIO
 from bs4 import BeautifulSoup
 import mimetypes
 import re
+import time
 
 # Load environment variables
 load_dotenv()
@@ -145,15 +146,37 @@ def generate_quiz(image_url):
 
 @app.route('/get_quiz', methods=['POST'])
 def get_quiz():
-    """API Endpoint to get a quiz based on an existing image."""
-    data = request.json  
-    image_url = data.get("image_url")
+    """Fetch a valid image and generate a quiz based on it."""
+    max_retries = 5  # Limit the number of retries to avoid infinite loops
+    attempts = 0
 
-    if not image_url:
-        return jsonify({"error": "Missing image data"}), 400
+    while attempts < max_retries:
+        attempts += 1
+        print(f"🔄 Attempt {attempts}: Fetching new image...")
 
-    quiz = generate_quiz(image_url)  # Pass only the image_url
-    return jsonify({"image_url": image_url, "quiz": quiz})
+        # Step 1: Fetch an Image
+        image_data = fetch_random_image()
+        if not image_data or "image_url" not in image_data:
+            print("⚠️ Failed to fetch a valid image. Retrying...")
+            continue  # Fetch another image
+
+        image_url = image_data["image_url"]
+        print(f"✅ Image Found: {image_url}")
+
+        # Step 2: Try to Generate Quiz
+        print("🧠 Generating quiz with AI...")
+        quiz = generate_quiz(image_url)
+
+        if quiz.startswith("ERROR") or "Could not generate quiz" in quiz:
+            print("❌ AI failed to process the image. Retrying...")
+            continue  # Fetch another image
+
+        # If we get a valid quiz, return the response
+        return jsonify({"image_url": image_url, "quiz": quiz})
+
+    # If all attempts fail, return an error message
+    print("🚨 Max retries reached. No valid images found.")
+    return jsonify({"error": "Could not find a valid image after multiple attempts. Please refresh the page and try again."}), 500
 
 
 @app.route('/get_image')
