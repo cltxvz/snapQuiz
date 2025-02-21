@@ -115,7 +115,7 @@ def generate_quiz(image_url):
         uploaded_file = genai.upload_file(image_path)
 
         prompt = f"""
-        Analyze this image and generate a **challenging** multiple-choice quiz with 10 questions.
+        Analyze this image and generate a **challenging** multiple-choice quiz with 5 questions.
 
         **IMPORTANT RULES:**
         - Each question must be **a full sentence** that clearly describes an object, color, shape, or element in the image.
@@ -123,6 +123,7 @@ def generate_quiz(image_url):
         - The **correct answer must always be the first choice**.
         - Make good, meaningful questions and not just generic ones. Actually analyze the image and make questions.
         - Never ask what the dominant color of the image is.
+        - Avoid complicated terminology (keep the language user-friendly).
         - STRICT FORMAT (no extra text before or after):
           "What is the dominant color in the image? - Blue - Red - Green - Yellow"
           "What object is located in the upper right corner? - A bird - A lamp - A tree - A cloud"
