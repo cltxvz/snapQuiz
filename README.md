@@ -9,10 +9,10 @@
 **SnapQuiz** is an interactive web application that challenges players to **memorize an image for a few seconds** and then answer **AI-generated multiple-choice questions** about it. This project leverages **Google Gemini AI** to analyze images and create dynamic quizzes.  
 
 ### ✅ **How it Works:**  
-1️⃣ **The app finds a random image online** (Wikimedia Commons).  
-2️⃣ **You have a few seconds to memorize it.**  
-3️⃣ **Answer a multiple-choice quiz** about the image.  
-4️⃣ **Get your score and see correct answers!**  
+1) **The app finds a random image online** (Wikimedia Commons).  
+2) **You have a few seconds to memorize it.**  
+3) **Answer a multiple-choice quiz** about the image.  
+4) **Get your score and see correct answers!**  
 
 SnapQuiz is a fun and engaging way to test **visual memory, observation skills, and attention to detail!**  
 
@@ -44,23 +44,23 @@ SnapQuiz is a fun and engaging way to test **visual memory, observation skills, 
 
 ## **📚 Skills & Concepts Applied:**  
 
-### **🔹 Full-Stack Development**  
+### **Full-Stack Development**  
 - **Frontend + Backend Integration** – Connecting React with Flask.  
 - **RESTful API Development** – Handling GET/POST requests for images & quizzes.  
 - **AI Integration** – Using **Google Gemini Vision AI** to generate custom quizzes.  
 
-### **🔹 Software Engineering Best Practices**  
+### **Software Engineering Best Practices**  
 - **Modular Code Structure** – Well-organized frontend & backend.  
 - **Error Handling & Debugging** – Handling invalid images, API failures, and retries.  
 - **Optimized API Calls** – Efficient **image fetching & quiz generation.**  
 - **Environment Variables (`.env`)** – Securing API keys & backend credentials.  
 
-### **🔹 AI & Data Processing**  
+### **AI & Data Processing**  
 - **Image Scraping & Filtering** – Using **BeautifulSoup** to select **valid images**.  
 - **Image Processing** – Resizing and converting images for AI compatibility.  
 - **AI Prompt Engineering** – Crafting effective prompts for **accurate quiz generation**.  
 
-### **🔹 UI/UX & Performance Optimization**  
+### **UI/UX & Performance Optimization**  
 - **Responsive Design** – Mobile-friendly interface with **Bootstrap 5**.  
 - **Timers & Animations** – Countdown timers for memorization phase.  
 - **Loading States & Status Updates** – Improved user experience with dynamic loading messages.  
@@ -69,13 +69,13 @@ SnapQuiz is a fun and engaging way to test **visual memory, observation skills, 
 
 ## **📖 Features & How to Use SnapQuiz:**  
 
-### **🔹 Game Flow:**  
-✅ **Click "Start Game"** – The app finds a random image.  
-✅ **Memorize the image** – You have **15 seconds** before it disappears!  
-✅ **Answer the quiz** – AI-generated multiple-choice questions test your memory.  
-✅ **See your final score** – Review answers and improve!  
+### **Game Flow:**  
+- **Click "Start Game"** – The app finds a random image.  
+- **Memorize the image** – You have **15 seconds** before it disappears!  
+- **Answer the quiz** – AI-generated multiple-choice questions test your memory.  
+- **See your final score** – Review answers and improve!  
 
-### **🔹 Game Enhancements:**  
+### **Game Enhancements:**  
 - **Dynamic AI Quizzes** – Each game is unique!  
 - **Auto-retry on invalid images** – Ensures AI can process the image.  
 - **Shuffled Answer Choices** – Prevents pattern-based guessing.  
@@ -85,33 +85,33 @@ SnapQuiz is a fun and engaging way to test **visual memory, observation skills, 
 
 ## **📈 Ideas for Future Improvements:**  
 
-🔹 **Different Quiz Modes** – Timed quizzes, difficulty levels, etc.  
-🔹 **Leaderboard & Score History** – Compete with friends!  
-🔹 **User Accounts & Profiles** – Save scores and progress.  
-🔹 **Multiplayer Mode** – Compete live with others!  
+- **Different Quiz Modes** – Timed quizzes, difficulty levels, etc.  
+- **Leaderboard & Score History** – Compete with friends!  
+- **User Accounts & Profiles** – Save scores and progress.  
+- **Multiplayer Mode** – Compete live with others!  
 
 ---
 
 ## **📜 How to Run SnapQuiz Locally:**  
 
-### **1️⃣ Clone the Repository:**  
+### **1. Clone the Repository:**  
 ```bash
 git clone https://github.com/cltxvz/snapQuiz.git
 ```
 
-### **2️⃣ Install Backend Dependencies:**  
+### **2. Install Backend Dependencies:**  
 ```bash
 cd backend
 pip install -r requirements.txt
 ```
 
-### **3️⃣ Set Up Environment Variables:**  
+### **3. Set Up Environment Variables:**  
 Create a `.env` file in the backend folder and add:  
 ```env
 GOOGLE_API_KEY=your-google-gemini-api-key
 ```
 
-### **4️⃣ Start the Backend Server:**  
+### **4. Start the Backend Server:**  
 ```bash
 python app.py
 ```
@@ -120,7 +120,7 @@ or
 flask run
 ```
 
-### **5️⃣ Install & Run the Frontend:**  
+### **5. Install & Run the Frontend:**  
 ```bash
 cd frontend
 npm install
@@ -134,7 +134,7 @@ http://localhost:3000
 ---
 
 ## **🌎 Live Demo (Hosted on Heroku)**  
-👉 **SnapQuiz:** [https://snapquiz-frontend-489546fcd686.herokuapp.com/](https://snapquiz-frontend-489546fcd686.herokuapp.com/)  
+**SnapQuiz:** [https://snapquiz-frontend-489546fcd686.herokuapp.com/](https://snapquiz-frontend-489546fcd686.herokuapp.com/)  
 
 ---
 

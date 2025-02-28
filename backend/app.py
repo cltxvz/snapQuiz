@@ -122,7 +122,7 @@ def generate_quiz(image_url):
         - Each question must have **exactly 4 answer choices**.
         - The **correct answer must always be the first choice**.
         - Make good, meaningful questions and not just generic ones. Actually analyze the image and make questions.
-        - Never ask what the dominant color of the image is.
+        - Never ask what the dominant color of the image is or the overall atmosphere of the scene as these type of questions are very abstract.
         - Avoid complicated terminology (keep the language user-friendly).
         - STRICT FORMAT (no extra text before or after):
           "What is the dominant color in the image? - Blue - Red - Green - Yellow"
