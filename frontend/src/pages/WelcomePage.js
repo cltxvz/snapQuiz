@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Header from "../components/Header";
@@ -11,6 +11,18 @@ function WelcomePage({ gameData, setGameData }) {
     const [startingGame, setStartingGame] = useState(false);
     const [hideContent, setHideContent] = useState(false); // Hide UI when starting game
     const navigate = useNavigate();
+
+    // Wake up the backend when the page first loads
+    useEffect(() => {
+        const wakeUpServer = async () => {
+            try {
+                await axios.get(`${API_URL}/wake_up`, { timeout: 5000 });
+            } catch (error) {
+            }
+        };
+
+        wakeUpServer(); // Run wake-up request when page loads
+    }, []);
 
     // Fetch Image & Quiz Before Game Starts
     const startGame = async () => {

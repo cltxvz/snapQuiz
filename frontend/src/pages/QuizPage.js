@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
@@ -58,6 +58,33 @@ function QuizPage({ gameData, setGameData }) {
         }
     };
 
+    // Ensure the score calculation function is memoized
+    const calculateScore = useCallback(() => {
+        let correctCount = 0;
+        quiz.forEach((q) => {
+            if (playerAnswers[q.id] === q.correctAnswer) {
+                correctCount++;
+            }
+        });
+
+        setGameData((prevGameData) => {
+            const updatedGameData = {
+                ...prevGameData,
+                score: correctCount,
+                playerAnswers,
+                currentQuestion: 0,
+            };
+
+            // Clear the saved timer when quiz ends
+            localStorage.removeItem("quizTimer");
+
+            // Use a timeout to ensure state updates before navigating
+            setTimeout(() => navigate("/score"), 500);
+
+            return updatedGameData;
+        });
+    }, [playerAnswers, quiz, navigate, setGameData]);
+
     // Auto-submit quiz when time runs out
     useEffect(() => {
         if (timeLeft <= 0 && !quizEnded) {
@@ -65,34 +92,12 @@ function QuizPage({ gameData, setGameData }) {
         }
     }, [timeLeft, quizEnded]);
 
-    // Calculate and save score **only after quiz ends**
+    // Ensure that score calculation runs only when the quiz ends
     useEffect(() => {
         if (quizEnded) {
-            let correctCount = 0;
-            quiz.forEach((q) => {
-                if (playerAnswers[q.id] === q.correctAnswer) {
-                    correctCount++;
-                }
-            });
-
-            setGameData((prevGameData) => {
-                const updatedGameData = {
-                    ...prevGameData,
-                    score: correctCount,
-                    playerAnswers,
-                    currentQuestion: 0,
-                };
-
-                // Clear the saved timer when quiz ends
-                localStorage.removeItem("quizTimer");
-
-                // Use a timeout to ensure state updates before navigating
-                setTimeout(() => navigate("/score"), 500);
-
-                return updatedGameData;
-            });
+            calculateScore();
         }
-    }, [quizEnded]); // Run only when quiz is marked as ended
+    }, [quizEnded, calculateScore]);
 
     // Timer Logic - Saves and retrieves time left
     useEffect(() => {
@@ -110,7 +115,7 @@ function QuizPage({ gameData, setGameData }) {
 
             return () => clearInterval(timer);
         }
-    }, [timeLeft]);
+    }, [timeLeft, gameData.mode]);
 
     return (
         <div className="d-flex flex-column min-vh-100">

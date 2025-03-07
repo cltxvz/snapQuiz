@@ -50,6 +50,10 @@ def get_quiz():
     print(f"Sending API Response: {response_data}")  # Debugging log
     return jsonify(response_data)
 
+@main.route("/wake_up", methods=["GET"])
+def wake_up():
+    """Dummy route to wake up the backend."""
+    return jsonify({"message": "Server is awake!"}), 200
 
 @main.route("/get_image")
 def get_image():
