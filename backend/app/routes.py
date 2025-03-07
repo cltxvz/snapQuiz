@@ -1,12 +1,10 @@
 from flask import Blueprint, jsonify, request
-from flask_cors import cross_origin
 from app.services import fetch_image, generate_quiz
 
 # Create a Flask Blueprint for routes
 main = Blueprint("main", __name__)
 
 @main.route("/get_quiz", methods=["POST"])
-@cross_origin()  # Ensure CORS is applied to this route
 def get_quiz():
     """Fetch an image (or multiple images) and generate a quiz."""
     

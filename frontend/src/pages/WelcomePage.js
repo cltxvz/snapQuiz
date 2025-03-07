@@ -89,22 +89,24 @@ function WelcomePage({ gameData, setGameData }) {
             return [];
         }
     
-        const questions = quizText.split("\n").filter(q => q.trim() !== "");
+        // Normalize line breaks
+        const questions = quizText.replace(/\r\n/g, "\n").split("\n").filter(q => q.trim() !== "");
     
         return questions.map((q, index) => {
+            // Ensure question text is separate from answer choices
             const parts = q.split(" - ").map(part => part.trim());
-            if (parts.length !== 5) {
+    
+            if (parts.length < 5) {
                 console.warn(`Skipping malformed question: ${q}`);
                 return null;
             }
     
             const correctAnswer = parts[1];
-            const choices = [parts[1], parts[2], parts[3], parts[4]].sort(() => Math.random() - 0.5);
+            const choices = parts.slice(1, 5).sort(() => Math.random() - 0.5); // Ensure 4 choices
     
             return { id: index, question: parts[0], choices, correctAnswer };
         }).filter(q => q !== null);
-    };
-    
+    }; 
 
     return (
         <div className="d-flex flex-column min-vh-100">

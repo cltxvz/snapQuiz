@@ -16,7 +16,7 @@ def create_app():
     app = Flask(__name__)
 
     # Enable CORS for all routes
-    CORS(app, resources={r"/*": {"origins": "*"}})
+    CORS(app)
 
     # Register API routes from routes.py
     from app.routes import main
