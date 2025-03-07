@@ -2,17 +2,20 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import Timer from "../components/Timer"; // Timer Component
 import QuizNavigation from "../components/QuizNavigation"; // Navigation Buttons
 
 function QuizPage({ gameData, setGameData }) {
     const navigate = useNavigate();
 
-    // Load player answers from gameData if they exist
     const [playerAnswers, setPlayerAnswers] = useState(() => gameData.playerAnswers || {});
     const [currentQuestion, setCurrentQuestion] = useState(() => gameData.currentQuestion || 0);
+    const [quizEnded, setQuizEnded] = useState(false);
 
-    // Redirect to home if quiz data is missing
+    // Load saved timer state from localStorage
+    const [timeLeft, setTimeLeft] = useState(() => {
+        return parseInt(localStorage.getItem("quizTimer")) || 15; // Default to 15 seconds
+    });
+
     useEffect(() => {
         if (!gameData.quiz || gameData.quiz.length === 0) {
             navigate("/");
@@ -21,69 +24,105 @@ function QuizPage({ gameData, setGameData }) {
 
     const quiz = gameData.quiz;
 
-    // Handles answer selection and updates game data
+    // Handles answer selection
     const handleAnswerSelection = (choice) => {
         const updatedAnswers = { ...playerAnswers, [quiz[currentQuestion].id]: choice };
         setPlayerAnswers(updatedAnswers);
-        setGameData({ ...gameData, playerAnswers: updatedAnswers });
+        setGameData((prevGameData) => ({
+            ...prevGameData,
+            playerAnswers: updatedAnswers,
+        }));
     };
 
     // Moves to the next question or submits the quiz
     const nextQuestion = () => {
         if (currentQuestion < quiz.length - 1) {
-            setCurrentQuestion(currentQuestion + 1);
-            setGameData({ ...gameData, currentQuestion: currentQuestion + 1 });
+            setCurrentQuestion((prev) => prev + 1);
+            setGameData((prevGameData) => ({
+                ...prevGameData,
+                currentQuestion: currentQuestion + 1,
+            }));
         } else {
-            calculateScore();
+            setQuizEnded(true); // Set state, triggering `useEffect`
         }
     };
 
     // Moves to the previous question
     const prevQuestion = () => {
         if (currentQuestion > 0) {
-            setCurrentQuestion(currentQuestion - 1);
-            setGameData({ ...gameData, currentQuestion: currentQuestion - 1 });
+            setCurrentQuestion((prev) => prev - 1);
+            setGameData((prevGameData) => ({
+                ...prevGameData,
+                currentQuestion: currentQuestion - 1,
+            }));
         }
     };
 
-    // Calculates the score and redirects to results page
-    const calculateScore = () => {
-        let correctCount = 0;
-        quiz.forEach((q) => {
-            if (playerAnswers[q.id] === q.correctAnswer) {
-                correctCount++;
-            }
-        });
+    // Auto-submit quiz when time runs out
+    useEffect(() => {
+        if (timeLeft <= 0 && !quizEnded) {
+            setQuizEnded(true);
+        }
+    }, [timeLeft, quizEnded]);
 
-        setGameData({ 
-            ...gameData, 
-            score: correctCount, 
-            playerAnswers, // Store answers so they persist
-            currentQuestion: 0 // Reset question index for next game
-        });
+    // Calculate and save score **only after quiz ends**
+    useEffect(() => {
+        if (quizEnded) {
+            let correctCount = 0;
+            quiz.forEach((q) => {
+                if (playerAnswers[q.id] === q.correctAnswer) {
+                    correctCount++;
+                }
+            });
 
-        navigate("/score");
-    };
+            setGameData((prevGameData) => {
+                const updatedGameData = {
+                    ...prevGameData,
+                    score: correctCount,
+                    playerAnswers,
+                    currentQuestion: 0,
+                };
+
+                // Clear the saved timer when quiz ends
+                localStorage.removeItem("quizTimer");
+
+                // Use a timeout to ensure state updates before navigating
+                setTimeout(() => navigate("/score"), 500);
+
+                return updatedGameData;
+            });
+        }
+    }, [quizEnded]); // Run only when quiz is marked as ended
+
+    // Timer Logic - Saves and retrieves time left
+    useEffect(() => {
+        if (gameData.mode !== "Timed Mode") return; // Only apply in Timed Mode
+
+        if (timeLeft > 0) {
+            const timer = setInterval(() => {
+                setTimeLeft((prevTime) => {
+                    const newTime = prevTime - 1;
+                    localStorage.setItem("quizTimer", newTime); // Save updated timer state
+
+                    return newTime;
+                });
+            }, 1000);
+
+            return () => clearInterval(timer);
+        }
+    }, [timeLeft]);
 
     return (
         <div className="d-flex flex-column min-vh-100">
-            {/* HEADER */}
             <Header />
-
-            {/* MAIN CONTENT */}
             <div className="container text-start flex-grow-1 d-flex flex-column justify-content-center align-items-center">
-                {/* Display Timer Only for Timed Mode */}
                 {gameData.mode === "Timed Mode" && (
-                    <Timer duration={30} onTimeUp={calculateScore} />
+                    <p className="fw-bold">Time Remaining: {timeLeft} seconds</p>
                 )}
-
-                {/* Question Display */}
                 <div className="mt-4 p-4 bg-light rounded shadow-lg w-75">
                     <h2 className="text-lg font-semibold mb-4">
                         {quiz[currentQuestion]?.question || "Loading..."}
                     </h2>
-
-                    {/* Answer Choices */}
                     <div>
                         {quiz[currentQuestion]?.choices.map((choice, index) => (
                             <button
@@ -99,18 +138,14 @@ function QuizPage({ gameData, setGameData }) {
                             </button>
                         ))}
                     </div>
-
-                    {/* Quiz Navigation Buttons */}
                     <QuizNavigation
                         currentQuestion={currentQuestion}
                         totalQuestions={quiz.length}
-                        onPrev={prevQuestion} 
-                        onNext={nextQuestion} 
+                        onPrev={prevQuestion}
+                        onNext={nextQuestion}
                     />
                 </div>
             </div>
-
-            {/* FOOTER */}
             <Footer />
         </div>
     );

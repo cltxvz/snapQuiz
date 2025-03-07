@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import WelcomePage from "./pages/WelcomePage";
 import GameModeSelection from "./pages/GameModeSelection";
 import ImagePage from "./pages/ImagePage";
@@ -10,13 +10,16 @@ import "./index.css";
 
 const AppRoutes = ({ gameData, setGameData }) => {
     const navigate = useNavigate();
+    const location = useLocation();
 
-    // Redirect to WelcomePage if quiz data is missing
+    // Redirect to WelcomePage only if quiz data is missing and user is NOT on game mode selection
     useEffect(() => {
         if (!gameData.quiz || gameData.quiz.length === 0) {
-            navigate("/", { replace: true });
+            if (location.pathname !== "/game-mode" && location.pathname !== "/") {
+                navigate("/", { replace: true });
+            }
         }
-    }, [gameData, navigate]);
+    }, [gameData.quiz, navigate, location.pathname]); // Correct dependencies
 
     return (
         <Routes>
@@ -46,7 +49,7 @@ function App() {
     // Save gameData to localStorage whenever it changes
     useEffect(() => {
         localStorage.setItem("gameData", JSON.stringify(gameData));
-    }, [gameData]); 
+    }, [gameData]);
 
     return (
         <Router>

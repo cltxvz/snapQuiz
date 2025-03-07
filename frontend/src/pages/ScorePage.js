@@ -37,7 +37,8 @@ function ScorePage({ gameData, setGameData }) {
         return null;
     }
 
-    const { score, quiz, imageData, playerAnswers } = gameData;
+    const { score, quiz, imageData, playerAnswers, mode } = gameData;
+    const isMultiImageMode = mode === "2-Images" || mode === "4-Images";
 
     return (
         <div className="d-flex flex-column min-vh-100">
@@ -48,25 +49,46 @@ function ScorePage({ gameData, setGameData }) {
             <div className="container text-center flex-grow-1 d-flex flex-column justify-content-center align-items-center">
                 <h2 className="text-xl fw-bold mb-4 mt-4">Results</h2>
 
-                {/* Image Display */}
-                {imageData?.image_url && (
-                    <div className="mb-4 text-center">
-                        <img 
-                            src={imageData.image_url} 
-                            alt="Quiz Reference" 
-                            className="rounded shadow-lg"
-                            style={{
-                                width: "80%",
-                                maxWidth: "1000px",
-                                minWidth: "1000px",
-                                height: "auto",
-                                maxHeight: "800px",
-                                minHeight: "800px",
-                                objectFit: "contain",
-                                border: "5px solid #333",
-                            }} 
-                        />
+                {/* Display Multiple Images if in 2-Images or 4-Images mode */}
+                {isMultiImageMode && imageData?.image_urls?.length > 0 ? (
+                    <div className="d-flex flex-wrap justify-content-center gap-3">
+                        {imageData.image_urls.map((url, index) => (
+                            <img 
+                                key={index}
+                                src={url} 
+                                alt={`Quiz Reference ${index + 1}`} 
+                                className="rounded shadow-lg"
+                                style={{
+                                    width: "40%",
+                                    maxWidth: "500px",
+                                    height: "auto",
+                                    maxHeight: "400px",
+                                    objectFit: "contain",
+                                    border: "3px solid #333",
+                                }} 
+                            />
+                        ))}
                     </div>
+                ) : (
+                    imageData?.image_urls && (
+                        <div className="mb-4 text-center">
+                            <img 
+                                src={imageData.image_urls} 
+                                alt="Quiz Reference" 
+                                className="rounded shadow-lg"
+                                style={{
+                                    width: "80%",
+                                    maxWidth: "1000px",
+                                    minWidth: "1000px",
+                                    height: "auto",
+                                    maxHeight: "800px",
+                                    minHeight: "800px",
+                                    objectFit: "contain",
+                                    border: "5px solid #333",
+                                }} 
+                            />
+                        </div>
+                    )
                 )}
 
                 {/* Enlarged Final Score */}

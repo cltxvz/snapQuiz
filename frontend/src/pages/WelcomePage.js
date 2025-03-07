@@ -14,70 +14,85 @@ function WelcomePage({ gameData, setGameData }) {
 
     // Fetch Image & Quiz Before Game Starts
     const startGame = async () => {
-        // Clear previous game data from localStorage
         localStorage.clear();
         localStorage.setItem("imageTimer", "15"); // Reset timer storage
-
-        // Reset game state (clear previous answers & reset quiz)
+    
         setGameData({
             imageData: null,
             quiz: [],
-            playerAnswers: {}, // Reset answers
-            mode: gameData.mode, // Keep selected mode
+            playerAnswers: {},
+            mode: gameData.mode, 
         });
-        
-        setHideContent(true); // Hide everything except status messages
-        setLoadingStatus("Finding image online...");
+    
+        setHideContent(true);
+        setLoadingStatus("Finding image(s) online...");
         setStartingGame(true);
-
+    
         try {
-            // Step 1: Fetch Image & Quiz Data
-            const quizRes = await axios.post(`${API_URL}/get_quiz`);
-
-            if (!quizRes.data.image_url || !quizRes.data.quiz) throw new Error("Invalid API response");
-
+            // Fetch Image & Quiz Data
+            const quizRes = await axios.post(`${API_URL}/get_quiz`, 
+                { mode: gameData.mode }, 
+                { headers: { "Content-Type": "application/json" } }
+            );
+    
+            if (!quizRes.data.image_urls || !quizRes.data.quiz || quizRes.data.image_urls.length === 0) {
+                throw new Error("Invalid API response");
+            }
+    
             setLoadingStatus("Generating quiz...");
-
-            // Step 2: Convert Quiz Data
+            
             const formattedQuiz = parseQuiz(quizRes.data.quiz);
             if (formattedQuiz.length === 0) throw new Error("Invalid quiz format");
-
-            // Ensure "Generating quiz..." is visible before updating to the next status
+    
             await new Promise(resolve => setTimeout(resolve, 3000));
-
+    
             setLoadingStatus("Starting game...");
-
-            // Step 3: Save Data to State
+    
+            // Save Data to State
             setTimeout(() => {
-                setGameData({
-                    ...gameData, // Preserve existing game data
-                    imageData: { image_url: quizRes.data.image_url },
+                setGameData(prevGameData => ({
+                    ...prevGameData,
+                    imageData: { image_urls: quizRes.data.image_urls },
                     quiz: formattedQuiz,
-                    playerAnswers: {}, // Reset answers again to ensure a clean start
-                });
-
+                    playerAnswers: {}, 
+                }));
+    
                 setStartingGame(false);
                 navigate("/image"); // Proceed to ImagePage
-            }, 2000); // Simulate slight delay for smoother transition
+            }, 2000);
+            
         } catch (error) {
-            console.error("Error:", error);
-            alert("An error occurred. Try again.");
+            console.error("Error in startGame:", error);
+            alert("An error occurred while starting the game. Please try again.");
             setStartingGame(false);
-            setHideContent(false); // Show UI again if error occurs
+            setHideContent(false);
         }
     };
+    
 
     // Convert AI quiz response into structured format
     const parseQuiz = (quizText) => {
+        if (!quizText || typeof quizText !== "string") {
+            console.error("Invalid quiz format received:", quizText);
+            return [];
+        }
+    
         const questions = quizText.split("\n").filter(q => q.trim() !== "");
+    
         return questions.map((q, index) => {
             const parts = q.split(" - ").map(part => part.trim());
-            if (parts.length !== 5) return null;
+            if (parts.length !== 5) {
+                console.warn(`Skipping malformed question: ${q}`);
+                return null;
+            }
+    
             const correctAnswer = parts[1];
             const choices = [parts[1], parts[2], parts[3], parts[4]].sort(() => Math.random() - 0.5);
+    
             return { id: index, question: parts[0], choices, correctAnswer };
         }).filter(q => q !== null);
     };
+    
 
     return (
         <div className="d-flex flex-column min-vh-100">
@@ -106,7 +121,7 @@ function WelcomePage({ gameData, setGameData }) {
                             Don't like the image you got? Start a new game!
                         </p>
 
-                        {/* BUTTONS: Aligned next to each other */}
+                        {/* BUTTONS */}
                         <div className="d-flex justify-content-center gap-3 mt-5">
                             <button 
                                 className="btn btn-primary"

@@ -1,17 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
-function Timer({ timeLeft, setTimeLeft, onEnd }) {
-  useEffect(() => {
-    if (timeLeft === 0) {
-      onEnd();
-      return;
-    }
+function Timer({ duration, onTimeUp }) {
+    const [timeLeft, setTimeLeft] = useState(duration);
 
-    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [timeLeft, setTimeLeft, onEnd]);
+    useEffect(() => {
+        if (timeLeft === 0) {
+            console.log("⏳ Timer expired. Auto-submitting quiz.");
+            onTimeUp(); // Call the function to auto-submit the quiz
+            return;
+        }
 
-  return <p>Time Remaining: {timeLeft} seconds</p>;
+        const timer = setTimeout(() => setTimeLeft(prevTime => prevTime - 1), 1000);
+        return () => clearTimeout(timer);
+    }, [timeLeft, onTimeUp]);
+
+    return <p className="fw-bold">Time Remaining: {timeLeft} seconds</p>;
 }
 
 export default Timer;

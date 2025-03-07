@@ -6,85 +6,98 @@ import Footer from "../components/Footer";
 function ImagePage({ gameData, setGameData }) {
     const navigate = useNavigate();
     
-    // Retrieve the saved time left from localStorage or use default 15s
-    const [timeLeft, setTimeLeft] = useState(() => {
-        const savedTime = localStorage.getItem("imageTimer");
-        return savedTime ? parseInt(savedTime, 10) : 15;
+    const totalImages = gameData.imageData?.image_urls?.length || 1;
+
+    // Load saved state from localStorage or set defaults
+    const [currentImageIndex, setCurrentImageIndex] = useState(() => {
+        return parseInt(localStorage.getItem("currentImageIndex")) || 0;
     });
 
-    // Debugging check: Log the image URL
-    useEffect(() => {
-    }, [gameData]);
+    const [timeLeft, setTimeLeft] = useState(() => {
+        return parseInt(localStorage.getItem("imageTimer")) || 15;
+    });
 
     useEffect(() => {
-        // If there's no image data, redirect to welcome page
-        if (!gameData.imageData || !gameData.imageData.image_url) {
+        if (!gameData.imageData || !gameData.imageData.image_urls) {
             navigate("/");
             return;
         }
 
-        // Start the countdown only if there's time left
+        // If quiz has already started, redirect immediately
+        if (localStorage.getItem("quizStarted") === "true") {
+            navigate("/quiz");
+            return;
+        }
+    }, [gameData, navigate]);
+
+    useEffect(() => {
         if (timeLeft > 0) {
             const timer = setInterval(() => {
                 setTimeLeft(prevTime => {
                     const newTime = prevTime - 1;
-                    
-                    // Save remaining time to localStorage
                     localStorage.setItem("imageTimer", newTime);
 
                     if (newTime === 0) {
                         clearInterval(timer);
-                        setTimeout(() => {
-                            localStorage.removeItem("imageTimer"); // Clear timer storage after use
-                            navigate("/quiz");
-                        }, 2000);
+
+                        if (currentImageIndex < totalImages - 1) {
+                            // Move to next image
+                            const newIndex = currentImageIndex + 1;
+                            setCurrentImageIndex(newIndex);
+                            localStorage.setItem("currentImageIndex", newIndex);
+                            setTimeLeft(15);
+                            localStorage.setItem("imageTimer", 15);
+                        } else {
+                            // Last image: Redirect to quiz and set flag
+                            localStorage.setItem("quizStarted", "true"); // Prevents re-showing images
+                            setTimeout(() => {
+                                localStorage.removeItem("imageTimer");
+                                localStorage.removeItem("currentImageIndex");
+                                navigate("/quiz");
+                            }, 2000);
+                        }
                     }
-                    
+
                     return newTime;
                 });
             }, 1000);
 
             return () => clearInterval(timer);
         }
-    }, [timeLeft, gameData, navigate]);
+    }, [timeLeft, currentImageIndex, totalImages, navigate]);
 
     return (
         <div className="d-flex flex-column min-vh-100">
-            {/* HEADER - Always visible */}
             <Header />
-
-            {/* MAIN CONTENT */}
             <div className="container text-center flex-grow-1 d-flex flex-column justify-content-center align-items-center">
                 {timeLeft > 0 ? (
                     <>
-                        {/* IMAGE DISPLAY - Only render if gameData.imageData.image_url exists */}
-                        {gameData.imageData?.image_url ? (
-                            <div className="mb-4 text-center" style={{ marginTop: "30px" }}>
-                                <img 
-                                    src={gameData.imageData.image_url} 
-                                    alt="Quiz" 
-                                    className="rounded shadow-lg" 
-                                    style={{
-                                        width: "80%",
-                                        maxWidth: "1000px",
-                                        minWidth: "1000px",
-                                        height: "auto",
-                                        maxHeight: "800px",
-                                        minHeight: "800px",
-                                        objectFit: "contain",
-                                        border: "5px solid #333",
-                                    }} 
-                                />
-                            </div>
+                        {gameData.imageData?.image_urls && gameData.imageData.image_urls.length > 0 ? (
+                            <img 
+                                src={gameData.imageData.image_urls[currentImageIndex]} 
+                                alt={`Scene ${currentImageIndex + 1} for quiz`}
+                                className="rounded shadow-lg"
+                                style={{
+                                    width: "80%",
+                                    maxWidth: "1000px",
+                                    minWidth: "1000px",
+                                    height: "auto",
+                                    maxHeight: "800px",
+                                    minHeight: "800px",
+                                    objectFit: "contain",
+                                    border: "5px solid #333",
+                                    marginTop: "10px",
+                                    marginBottom: "10px",
+                                }} 
+                            />
                         ) : (
-                            <p className="text-danger">⚠️ Image not available. Check gameData or CORS settings.</p>
+                            <p className="text-danger">⚠️ Image not available.</p>
                         )}
 
                         <p className="text-xl font-semibold" style={{ color: "black" }}>
                             Memorize this image!
                         </p>
 
-                        {/* TIMER DISPLAY */}
                         <div className="w-64 bg-gray-700 rounded-full h-4 mt-2 relative">
                             <div
                                 className="bg-green-500 h-4 rounded-full absolute"
@@ -95,7 +108,7 @@ function ImagePage({ gameData, setGameData }) {
                             ></div>
                         </div>
 
-                        <p className="text-lg font-semibold mt-2" style={{ color: "black" }}>
+                        <p className="text-lg font-semibold mt-1" style={{ color: "black" }}>
                             {timeLeft} seconds left
                         </p>
                     </>
@@ -103,8 +116,6 @@ function ImagePage({ gameData, setGameData }) {
                     <h3 className="fw-bold">Time's up! Redirecting to quiz...</h3>
                 )}
             </div>
-
-            {/* FOOTER - Always visible */}
             <Footer />
         </div>
     );
