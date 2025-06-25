@@ -13,7 +13,7 @@ function QuizPage({ gameData, setGameData }) {
 
     // Load saved timer state from localStorage
     const [timeLeft, setTimeLeft] = useState(() => {
-        return parseInt(localStorage.getItem("quizTimer")) || 15; // Default to 15 seconds
+        return parseInt(localStorage.getItem("quizTimer")) || 25; // Default to 25 seconds
     });
 
     useEffect(() => {
