@@ -208,7 +208,7 @@ def generate_quiz(image_urls, mode="Basic Mode"):
         return "ERROR: Invalid game mode."
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-flash-latest")
         response = model.generate_content([prompt] + uploaded_files)
 
         # Log AI response
