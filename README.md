@@ -137,11 +137,6 @@ http://localhost:3000
 
 ---
 
-## **🌎 Live Demo (Hosted on Heroku)**  
-**SnapQuiz:** [https://snapquiz-frontend-489546fcd686.herokuapp.com/](https://snapquiz-frontend-489546fcd686.herokuapp.com/)  
-
----
-
 ## **👤 Author**  
 **Carlos A. Cárdenas**  
 
